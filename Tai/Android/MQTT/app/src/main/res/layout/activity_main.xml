@@ -6,14 +6,30 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
+
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
+
+        <EditText
+            android:id="@+id/et_room"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Số phòng"
+            android:inputType="number" />
+
+        <Button
+            android:id="@+id/btn_load_data"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/et_room"
+            android:text="Tải dữ liệu" />
 
         <TextView
             android:id="@+id/tv_money"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_below="@+id/btn_load_data"
             android:gravity="center"
             android:text="Tiền phòng"
             android:textColor="@color/colorAccent"
@@ -26,8 +42,8 @@
             android:layout_height="wrap_content"
             android:layout_below="@+id/tv_money"
             android:text="Chỉ số tháng"
-            android:textSize="25sp"
-            android:textColor="@color/colorPrimary"/>
+            android:textColor="@color/colorPrimary"
+            android:textSize="25sp" />
 
         <LinearLayout
             android:id="@+id/ll_current"
@@ -86,8 +102,8 @@
             android:layout_height="wrap_content"
             android:layout_below="@+id/ll_current"
             android:text="Chỉ số tháng"
-            android:textSize="25sp"
-            android:textColor="@color/colorPrimary"/>
+            android:textColor="@color/colorPrimary"
+            android:textSize="25sp" />
 
         <LinearLayout
             android:id="@+id/ll_previous"
@@ -194,20 +210,12 @@
             android:layout_height="wrap_content"
             android:layout_below="@+id/rdg_select_mode">
 
-            <EditText
-                android:id="@+id/et_room"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="3"
-                android:hint="Số phòng"
-                android:inputType="number" />
-
             <ToggleButton
                 android:id="@+id/btn_on_off"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerHorizontal="true"
-                android:layout_weight="7"
+                android:layout_weight="10"
                 android:checked="true"
                 android:text="ToggleButton"
                 android:textOff="Tắt"
@@ -226,8 +234,8 @@
                 android:id="@+id/btn_save"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="4"
-                android:text="Lưu"
+                android:layout_weight="7"
+                android:text="Thực hiện"
                 android:visibility="gone" />
         </LinearLayout>
     </RelativeLayout>

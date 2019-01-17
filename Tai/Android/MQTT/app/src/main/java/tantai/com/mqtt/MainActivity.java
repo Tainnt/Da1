@@ -29,7 +29,10 @@ import java.util.Calendar;
 import static java.lang.Long.parseLong;
 
 public class MainActivity extends AppCompatActivity {
-    private Button btn;
+    private final long ELEC_PRICE = 3000;
+    private final long WATER_PRICE = 7000;
+    private final long ROOM_PRICE = 1200000;
+    private Button btn, btnLoadData;
     private ToggleButton btnOnOff;
     private TextView tvWtCurr, tvEltCurr, tvWtPre, tvEltPre, tvCurrMonth, tvPreMonth, tvSum;
     private RadioGroup rdgSelect;
@@ -37,6 +40,7 @@ public class MainActivity extends AppCompatActivity {
     MqttAndroidClient client;
     private Calendar cal;
     private int currMonth, preMonth;
+    private String room = "0";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,11 +49,13 @@ public class MainActivity extends AppCompatActivity {
 
         findView();
         connect();
+
         cal = Calendar.getInstance();
         currMonth = cal.get(Calendar.MONTH) + 1;
         preMonth = (currMonth == 1) ? 12 : currMonth - 1;
         tvCurrMonth.setText("Chỉ số tháng " + currMonth);
         tvPreMonth.setText("Chỉ số tháng " + preMonth);
+
 
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -58,9 +64,9 @@ public class MainActivity extends AppCompatActivity {
                     if (!etRoom.getText().toString().equals("") && !etTime.getText().toString().equals("")) {
                         String command = "OFF!" + etRoom.getText() + "!" + etTime.getText();
                         publish(client, command, "NguonDienTong");
-                        Toast.makeText(getApplication(), "Đã thực hiện", Toast.LENGTH_LONG).show();
+                        Toast.makeText(getApplication(), "Đã thực hiện", Toast.LENGTH_SHORT).show();
                     } else {
-                        Toast.makeText(getApplication(), "Bạn cần nhập đầy đủ thông tin", Toast.LENGTH_LONG).show();
+                        Toast.makeText(getApplication(), "Bạn cần nhập đầy đủ thông tin", Toast.LENGTH_SHORT).show();
                     }
                 }
             }
@@ -70,17 +76,32 @@ public class MainActivity extends AppCompatActivity {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 String temp = etRoom.getText().toString();
                 if (etRoom.getText().toString().equals("")) {
-                    Toast.makeText(getApplication(), "Bạn cần nhập số phòng", Toast.LENGTH_LONG).show();
+                    Toast.makeText(getApplication(), "Bạn cần nhập số phòng", Toast.LENGTH_SHORT).show();
                     btnOnOff.setChecked(false);
                 } else {
                     String command;
                     if (btnOnOff.getText().equals("Bật")) {
-                        command = "ON!" + etRoom.getText();
+                        command = "OFF!";
                     } else {
-                        command = "OFF!" + etRoom.getText();
+                        command = "ON!";
                     }
-                    publish(client, command, "NguonDienTong");
-                    Toast.makeText(getApplication(), "Đã thực hiện", Toast.LENGTH_LONG).show();
+                    publish(client, command, etRoom.getText().toString() + "/NguonDienTong");
+                    Toast.makeText(getApplication(), "Đã thực hiện", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+        btnLoadData.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (etRoom.getText().toString().equals("")) {
+                    Toast.makeText(getApplication(), "Bạn cần nhập số phòng", Toast.LENGTH_SHORT).show();
+                } else {
+                    room = etRoom.getText().toString();
+                    connect();
+//                    if (tvWtPre.getText().equals("0") && tvEltPre.getText().equals("0") &&
+//                            tvWtCurr.getText().equals("0") && tvEltCurr.getText().equals("0")) {
+//                        Toast.makeText(getApplication(), "Không có dữ liệu", Toast.LENGTH_SHORT).show();
+//                    }
                 }
             }
         });
@@ -117,10 +138,14 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onSuccess(IMqttToken asyncActionToken) {
 
-                    subscribe(client, "" + currMonth);
-                    subscribe(client, "" + currMonth);
-                    subscribe(client, "" + preMonth);
-                    subscribe(client, "" + preMonth);
+                    subscribe(client, room + "/" + currMonth);
+                    subscribe(client, room + "/" + preMonth);
+
+                    tvEltCurr.setText("0");
+                    tvWtCurr.setText("0");
+                    tvEltPre.setText("0");
+                    tvWtPre.setText("0");
+                    tvSum.setText("0");
 
                     client.setCallback(new MqttCallback() {
                         @Override
@@ -131,18 +156,18 @@ public class MainActivity extends AppCompatActivity {
                         public void messageArrived(String topic, MqttMessage message) throws Exception {
                             message.getPayload();
                             String[] temp = sliptString(message.toString());
-                            if (topic.equals(currMonth + "")) {
-                                tvEltCurr.setText(temp[1]);
-                                tvWtCurr.setText(temp[2]);
-                            }
-                            if (topic.equals(preMonth + "")) {
-                                tvEltPre.setText(temp[1]);
-                                tvWtPre.setText(temp[2]);
+                            if (topic.equals(room + "/" + currMonth)) {
+                                tvEltCurr.setText(temp[0]);
+                                tvWtCurr.setText(temp[1]);
+                            } else if (topic.equals(room + "/" + preMonth)) {
+                                tvEltPre.setText(temp[0]);
+                                tvWtPre.setText(temp[1]);
                             }
 
                             if (!tvWtPre.getText().equals("0") && !tvEltPre.getText().equals("0") &&
                                     !tvWtCurr.getText().equals("0") && !tvEltCurr.getText().equals("0")) {
-                                tvSum.setText(countSum() + "");
+                                tvSum.setText(calculateSum() + "");
+                                Toast.makeText(getApplication(), "Đã tải xong", Toast.LENGTH_SHORT).show();
                             }
                         }
 
@@ -185,7 +210,6 @@ public class MainActivity extends AppCompatActivity {
 
                 @Override
                 public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
-
                 }
             });
         } catch (MqttException e) {
@@ -206,24 +230,21 @@ public class MainActivity extends AppCompatActivity {
         rdgSelect = (RadioGroup) findViewById(R.id.rdg_select_mode);
         etRoom = (EditText) findViewById(R.id.et_room);
         etTime = (EditText) findViewById(R.id.et_time);
+        btnLoadData = (Button) findViewById(R.id.btn_load_data);
     }
 
     public String[] sliptString(String s) {
-        String[] result = new String[3];
-        String[] W = s.split("W");
-        String[] E = W[0].split("E");
-        String[] R = E[0].split("R");
-        result[0] = R[1];
-        result[1] = E[1];
-        result[2] = W[1];
+        String[] result = new String[2];
+        String[] W = s.split("E");
+        String[] E = W[1].split("W");
+        result[0] = E[0];
+        result[1] = W[0];
         return result;
     }
 
-    public long countSum() {
+    public long calculateSum() {
         long water = Long.parseLong(tvWtCurr.getText().toString()) - Long.parseLong(tvWtPre.getText().toString());
         long elec = Long.parseLong(tvEltCurr.getText().toString()) - Long.parseLong(tvEltPre.getText().toString());
-        return water * 7000 + elec * 3000;
+        return water * WATER_PRICE + elec * ELEC_PRICE + ROOM_PRICE;
     }
 }
-
-
